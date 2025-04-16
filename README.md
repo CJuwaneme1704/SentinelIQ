@@ -21,7 +21,7 @@ SentinelIQ is an AI-powered admin companion for web apps. It provides real-time 
 
 - **Spring Boot** – backend logic & API
 - **Python (FastAPI)** – ML engine for analysis
-- **React** – Admin dashboard UI
+- **Next.js(React)** – Admin dashboard UI
 - **Supabase/PostgreSQL** – Data storage
 - **Tailwind CSS** – Frontend styling
 
