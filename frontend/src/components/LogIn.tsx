@@ -7,7 +7,7 @@ export default function LogIn() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="bg-white shadow-md rounded-lg p-8 max-w-md w-full">
         <h1 className="text-2xl font-bold text-purple-600 text-center mb-6">
-          Welcome Back to SentinelIQ
+          Welcome to SentinelIQ
         </h1>
         <form className="space-y-4">
           {/* Email Input */}
