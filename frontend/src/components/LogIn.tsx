@@ -1,8 +1,39 @@
 'use client';
 
+import { useState } from "react";
+
 import Link from "next/link";
 
 export default function LogIn() {
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+
+    try {
+      const res = await fetch("http://localhost:8080/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        console.error("Login failed");
+      } else {
+        console.log("Login successful");
+        // You can redirect or store token here later
+      }
+    } catch (error) {
+      console.error("Something went wrong", error);
+    }
+  }
+
+
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="bg-white shadow-md rounded-lg p-8 max-w-md w-full">
@@ -21,6 +52,8 @@ export default function LogIn() {
               name="email"
               className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
               placeholder="you@example.com"
+              value={email} // Bind to state
+              onChange={(e) => setEmail(e.target.value)} // Update state on change
               required
             />
           </div>
@@ -36,6 +69,8 @@ export default function LogIn() {
               name="password"
               className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
               placeholder="••••••••"
+              value={password} // Bind to state
+              onChange={(e) => setPassword(e.target.value)} // Update state on change
               required
             />
           </div>
