@@ -7,6 +7,7 @@ export default function SignUp() {
   // 🔥 State to hold form data
   const [formData, setFormData] = useState({
     name: "",
+    username: "", // Added username field
     email: "",
     password: "",
     confirmPassword: "",
@@ -37,9 +38,10 @@ export default function SignUp() {
         },
         body: JSON.stringify({
           name: formData.name,
+          username: formData.username, // Include username in the request
           email: formData.email,
           password: formData.password,
-          role: "USER" // Default role for new users
+          role: "USER", // Default role for new users
         }),
       });
 
@@ -50,6 +52,7 @@ export default function SignUp() {
         // Optional: Clear form here
         setFormData({
           name: "",
+          username: "",
           email: "",
           password: "",
           confirmPassword: "",
@@ -83,6 +86,23 @@ export default function SignUp() {
               onChange={handleChange} // Update state on change
               className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
               placeholder="John Doe"
+              required
+            />
+          </div>
+
+          {/* Username Input */}
+          <div>
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+              Username
+            </label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              value={formData.username} // Bind to state
+              onChange={handleChange} // Update state on change
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+              placeholder="Your username"
               required
             />
           </div>
