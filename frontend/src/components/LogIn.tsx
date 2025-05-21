@@ -1,35 +1,46 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-// import { useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LogIn() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  // const router = useRouter();
+  const router = useRouter();
+  const { setIsAuthenticated, isAuthenticated, authChecked } = useAuth();
+
+  useEffect(() => {
+    // 🔁 Auto-redirect if already logged in
+    if (authChecked && isAuthenticated) {
+      router.replace("/user_pages/protected/dashboard");
+    }
+  }, [authChecked, isAuthenticated, router]);
+
+  if (!authChecked || isAuthenticated) return null;
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
 
     try {
-      const res = await fetch("http://localhost:8080/api/login", {
+      const res = await fetch("http://localhost:8080/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include", // 🔐 needed for cookie exchange
+        credentials: "include",
         body: JSON.stringify({ username, password }),
       });
-      
+
       const data = await res.json();
 
       if (!res.ok) {
         alert("Login failed: " + (data.message || "Unknown error"));
       } else {
-        // localStorage.setItem("token", data.token); // 🔐 Store JWT for future requests
         alert("Login successful!");
-        // router.push("/dashboard"); // Optional: redirect after login
+        setIsAuthenticated(true);
+        router.push("/user_pages/protected/dashboard");
       }
     } catch (error) {
       console.error("Something went wrong", error);
@@ -52,10 +63,9 @@ export default function LogIn() {
               type="text"
               id="username"
               name="username"
-              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
-              placeholder="Your username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
               required
             />
           </div>
@@ -68,10 +78,9 @@ export default function LogIn() {
               type="password"
               id="password"
               name="password"
-              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
-              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
               required
             />
           </div>

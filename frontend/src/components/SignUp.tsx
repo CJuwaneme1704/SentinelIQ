@@ -1,19 +1,30 @@
 'use client';
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 export default function SignUp() {
-  // 🔥 State to hold form data
+  const router = useRouter();
+  const { setIsAuthenticated, isAuthenticated, authChecked } = useAuth();
+
   const [formData, setFormData] = useState({
     name: "",
-    username: "", // Added username field
+    username: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
 
-  // 🔥 Handle form input changes
+  useEffect(() => {
+    if (authChecked && isAuthenticated) {
+      router.replace("/user_pages/protected/dashboard");
+    }
+  }, [authChecked, isAuthenticated, router]);
+
+  if (!authChecked || isAuthenticated) return null;
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
@@ -21,7 +32,6 @@ export default function SignUp() {
     });
   };
 
-  // 🔥 THIS is where your fetch code goes (handleSubmit)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -31,17 +41,18 @@ export default function SignUp() {
     }
 
     try {
-      const res = await fetch("http://localhost:8080/api/signup", {
+      const res = await fetch("http://localhost:8080/api/auth/signup", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           name: formData.name,
-          username: formData.username, // Include username in the request
+          username: formData.username,
           email: formData.email,
           password: formData.password,
-          role: "USER", // Default role for new users
+          role: "USER",
         }),
       });
 
@@ -49,7 +60,7 @@ export default function SignUp() {
 
       if (res.ok) {
         alert("Signup successful: " + data);
-        // Optional: Clear form here
+        setIsAuthenticated(true);
         setFormData({
           name: "",
           username: "",
@@ -57,6 +68,7 @@ export default function SignUp() {
           password: "",
           confirmPassword: "",
         });
+        router.push('/user_pages/protected/dashboard');
       } else {
         alert("Signup failed: " + data);
       }
@@ -73,7 +85,6 @@ export default function SignUp() {
           Create Your SentinelIQ Account
         </h1>
         <form className="space-y-4" onSubmit={handleSubmit}>
-          {/* Name Input */}
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700">
               Full Name
@@ -82,15 +93,14 @@ export default function SignUp() {
               type="text"
               id="name"
               name="name"
-              value={formData.name} // Bind to state
-              onChange={handleChange} // Update state on change
+              value={formData.name}
+              onChange={handleChange}
               className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
               placeholder="John Doe"
               required
             />
           </div>
 
-          {/* Username Input */}
           <div>
             <label htmlFor="username" className="block text-sm font-medium text-gray-700">
               Username
@@ -99,15 +109,14 @@ export default function SignUp() {
               type="text"
               id="username"
               name="username"
-              value={formData.username} // Bind to state
-              onChange={handleChange} // Update state on change
+              value={formData.username}
+              onChange={handleChange}
               className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
               placeholder="Your username"
               required
             />
           </div>
 
-          {/* Email Input */}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">
               Email Address
@@ -116,15 +125,14 @@ export default function SignUp() {
               type="email"
               id="email"
               name="email"
-              value={formData.email} // Bind to state
-              onChange={handleChange} // Update state on change
+              value={formData.email}
+              onChange={handleChange}
               className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
               placeholder="you@example.com"
               required
             />
           </div>
 
-          {/* Password Input */}
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700">
               Password
@@ -133,15 +141,14 @@ export default function SignUp() {
               type="password"
               id="password"
               name="password"
-              value={formData.password} // Bind to state
-              onChange={handleChange} // Update state on change
+              value={formData.password}
+              onChange={handleChange}
               className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
               placeholder="••••••••"
               required
             />
           </div>
 
-          {/* Confirm Password Input */}
           <div>
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
               Confirm Password
@@ -150,15 +157,14 @@ export default function SignUp() {
               type="password"
               id="confirmPassword"
               name="confirmPassword"
-              value={formData.confirmPassword} // Bind to state
-              onChange={handleChange} // Update state on change
+              value={formData.confirmPassword}
+              onChange={handleChange}
               className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
               placeholder="••••••••"
               required
             />
           </div>
 
-          {/* Submit Button */}
           <button
             type="submit"
             className="w-full bg-purple-600 text-white py-2 px-4 rounded-md font-medium hover:bg-purple-800 transition duration-300"
@@ -167,7 +173,6 @@ export default function SignUp() {
           </button>
         </form>
 
-        {/* Additional Links */}
         <div className="mt-6 text-center text-sm text-gray-600">
           <p>
             Already have an account?{" "}

@@ -1,14 +1,29 @@
+'use client';
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
-import { FaLock } from "react-icons/fa"; // Import the lock icon
+import { FaLock } from "react-icons/fa";
 
 export default function LandingPage() {
+  const { isAuthenticated, authChecked } = useAuth();
+  const router = useRouter();
+
+  // 🔁 Auto-redirect if session is active
+  useEffect(() => {
+    if (authChecked && isAuthenticated) {
+      router.replace("/user_pages/protected/dashboard");
+    }
+  }, [authChecked, isAuthenticated]);
+
+  if (!authChecked || isAuthenticated) return null;
+
   return (
     <div className="min-h-screen bg-[#F9F9F9] text-gray-900 font-sans">
       {/* Hero Section */}
       <section className="w-full bg-[#EDEDED] px-8 py-16">
         <div className="max-w-7xl mx-auto flex flex-col-reverse md:flex-row justify-between items-center">
-
-          {/* Left Side: Text and Button */}
           <div className="max-w-xl mx-auto md:mx-0">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
               Introducing Your New <br /> Inbox Defense Powerhouse
@@ -26,7 +41,6 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Right Side: Image or Icon */}
           <div className="mb-10 md:mb-0 md:-ml-6">
             <div className="relative w-[300px] h-[300px] rounded-full overflow-hidden bg-purple-600 flex items-center justify-center">
               <FaLock className="text-white text-8xl" />
@@ -35,7 +49,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* SentinelIQ Features Section */}
+      {/* Features */}
       <section className="py-20 px-6 max-w-6xl mx-auto">
         <h2 className="text-3xl font-bold text-center mb-12">SentinelIQ Features</h2>
         <div className="grid md:grid-cols-3 gap-10">
@@ -60,7 +74,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Call to Action Section */}
+      {/* Call to Action */}
       <section className="bg-purple-600 text-white text-center py-16 px-6">
         <h2 className="text-3xl md:text-4xl font-bold mb-4">
           Ready to Take Back Control of Your Inbox?

@@ -1,16 +1,19 @@
-// middleware.ts
-import { NextRequest, NextResponse } from "next/server";
+// // middleware.ts
+// import { NextRequest, NextResponse } from 'next/server';
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+// export function middleware(req: NextRequest) {
+//   const token = req.cookies.get('access_token');
 
-  if (pathname === "/") {
-    return NextResponse.redirect(new URL("/landing", request.url));
-  }
 
-  return NextResponse.next();
-}
+//   if (!token) {
+//     // Redirect to login if no JWT is found
+//     return NextResponse.redirect(new URL('/login', req.url));
+//   }
 
-export const config = {
-  matcher: ["/"], // only match the root path
-};
+//   return NextResponse.next();
+// }
+
+// // Apply the middleware to protected routes
+// export const config = {
+//   matcher: ['/user_pages/protected/:path*'],
+// };
