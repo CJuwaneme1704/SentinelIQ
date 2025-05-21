@@ -16,7 +16,7 @@ export default function Navbar() {
         credentials: "include",
       });
       setIsAuthenticated(false);
-      window.location.href = "/login";
+      window.location.href = "/";
     } catch (err) {
       console.error("Logout failed:", err);
     }

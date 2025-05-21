@@ -4,7 +4,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
         {/* Left: Branding */}
         <div className="text-center md:text-left">
-          <h2 className="text-lg font-semibold text-indigo-700">SentinelIQ</h2>
+          <h2 className="text-lg font-semibold text-purple-600">SentinelIQ</h2>
           <p className="text-sm text-gray-500">AI-powered email intelligence</p>
         </div>
 
