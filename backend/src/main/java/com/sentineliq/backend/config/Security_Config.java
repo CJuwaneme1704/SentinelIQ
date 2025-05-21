@@ -1,6 +1,9 @@
 package com.sentineliq.backend.config;
 
 import com.sentineliq.backend.security.JwtAuthenticationFilter;
+
+import jakarta.servlet.http.HttpServletResponse;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -18,11 +21,13 @@ public class Security_Config {
     public Security_Config(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable()) // Disable CSRF for API use
+            .cors(cors -> {}) // ✅ Enables CORS with default settings
+            .csrf(csrf -> csrf.disable())
+            .formLogin(form -> form.disable())
+            .httpBasic(basic -> basic.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/api/auth/signup",
@@ -30,20 +35,26 @@ public class Security_Config {
                     "/api/auth/refresh",
                     "/api/auth/logout",
                     "/api/auth/check"
-                ).permitAll() // Allow public access to auth endpoints
-                .anyRequest().authenticated() // Require auth for all other requests
+                ).permitAll()
+                .anyRequest().authenticated()
             )
             .logout(logout -> logout
                 .logoutUrl("/api/auth/logout")
                 .deleteCookies("access_token", "refresh_token")
                 .invalidateHttpSession(true)
                 .clearAuthentication(true)
+                .logoutSuccessHandler((request, response, authentication) -> {
+                    response.setStatus(HttpServletResponse.SC_OK);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"message\": \"Logout successful\"}");
+                })
             )
-            // ✅ Add custom JWT auth filter before default username/password filter
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
+
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {
