@@ -1,5 +1,5 @@
 package com.sentineliq.backend.service;
 
-public class GmailOAuthService {
+public class UserServiceTest {
 
 }

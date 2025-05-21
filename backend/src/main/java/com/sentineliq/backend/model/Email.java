@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "emails")
+@Builder // ✅ Adds a builder pattern for this class
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
