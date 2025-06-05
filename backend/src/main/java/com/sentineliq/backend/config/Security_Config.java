@@ -11,6 +11,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import java.util.List;
 
 @Configuration
 public class Security_Config {
@@ -24,7 +25,14 @@ public class Security_Config {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors -> {}) // ✅ Enables CORS with default settings
+           .cors(cors -> cors.configurationSource(request -> {
+            var config = new org.springframework.web.cors.CorsConfiguration();
+            config.setAllowedOrigins(List.of("http://localhost:3000")); // ✅ Frontend origin
+            config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+            config.setAllowedHeaders(List.of("*"));
+            config.setAllowCredentials(true); // ✅ Needed for cookies (JWT)
+            return config;
+            }))
             .csrf(csrf -> csrf.disable())
             .formLogin(form -> form.disable())
             .httpBasic(basic -> basic.disable())
@@ -34,7 +42,8 @@ public class Security_Config {
                     "/api/auth/login",
                     "/api/auth/refresh",
                     "/api/auth/logout",
-                    "/api/auth/check"
+                    "/api/auth/check",
+                    "/auth/**" // ✅ Allow OAuth endpoints too
                 ).permitAll()
                 .anyRequest().authenticated()
             )

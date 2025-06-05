@@ -1,8 +1,10 @@
 package com.sentineliq.backend.repository;
 
 import com.sentineliq.backend.model.EmailAccount;
+import com.sentineliq.backend.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import java.util.List;
 
 /**
  * Repository for managing EmailAccount entities.
@@ -19,4 +21,7 @@ public interface EmailAccountRepository extends JpaRepository<EmailAccount, Long
      * @return true if an email account with the given address exists, false otherwise
      */
     boolean existsByEmailAddress(String emailAddress);
+
+     // ✅ Add this line:
+    List<EmailAccount> findAllByUser(User user);
 }

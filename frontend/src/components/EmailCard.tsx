@@ -19,7 +19,7 @@ const EmailCard: React.FC<EmailCardProps> = ({
 }) => {
   return (
     <div
-      className={`rounded-xl border shadow-sm p-4 mb-3 bg-white cursor-pointer hover:shadow-lg transition ${
+      className={`rounded-xl border border-white shadow-lg p-4 mb-3 bg-white cursor-pointer hover:shadow-2xl transition ${
         spam ? "opacity-70" : ""
       }`}
       onClick={onClick}
