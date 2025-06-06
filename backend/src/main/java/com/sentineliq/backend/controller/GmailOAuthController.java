@@ -1,17 +1,15 @@
 package com.sentineliq.backend.controller;
 
-import com.sentineliq.backend.dto.GmailTokenResponse;
 import com.sentineliq.backend.repository.EmailAccountRepository;
 import com.sentineliq.backend.repository.UserRepository;
+import com.sentineliq.backend.service.GmailService;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -51,6 +49,9 @@ public class GmailOAuthController {
     @Value("${gmail.oauth.scopes}")
     private String scopes;
 
+    private final GmailService gmailService;
+
+
 
     // We'll add methods here step by step
 
@@ -71,44 +72,26 @@ public class GmailOAuthController {
         // 🔁 Redirect the user to Google's OAuth screen
         response.sendRedirect(authUrl);
     }
-    
+
+
     @SuppressWarnings("unchecked")
     @GetMapping("/callback")
     public ResponseEntity<?> handleGmailCallback(
         @RequestParam("code") String code,
         @CookieValue(value = "access_token", required = false) String token,
-        HttpServletResponse response)
-        {
-        
+        HttpServletResponse response) {
+
         if (token == null || token.isBlank()) {
+            log.warn("⚠️ Missing access token cookie");
             return ResponseEntity.status(401).body("Missing authentication token");
         }
 
+        log.info("📩 Gmail OAuth callback received with code={}", code);
 
-
-        // 🔧 Step 1: Initialize the new Spring 3.2+ HTTP client
         RestClient restClient = RestClient.create();
 
-         // 🧠 Logging the callback trigger
-        log.info("📩 Received Gmail OAuth callback with code={}", code);
-
-
-        // // 📦 Step 2: Prepare the form data to exchange authorization code for tokens
-        // Map<String, String> tokenRequest = Map.of(
-        //     "code", code,                             // The code from Google's redirect
-        //     "client_id", clientId,                    // Your Google app's client ID
-        //     "client_secret", clientSecret,            // Your Google app's client secret
-        //     "redirect_uri", redirectUri,              // Must match the one used during redirect
-        //     "grant_type", "authorization_code"        // Standard for exchanging code
-        // );
-
-        // // 🚀 Step 3: Send POST request to Google's token endpoint to receive access & refresh tokens
-        // Map<String, Object> tokenResponse = restClient.post()
-        //     .uri("https://oauth2.googleapis.com/token")                   // Token exchange URL
-        //     .contentType(MediaType.APPLICATION_FORM_URLENCODED)          // Required by Google's API
-        //     .body(tokenRequest)                                          // The body with code/client info
-        //     .retrieve()                                                  // Execute request
-        //     .body(Map.class);                                            // Convert response to Map
+        // 🔄 Step 1: Exchange code for tokens
+        log.info("🔁 Exchanging authorization code for tokens...");
 
         String formBody = "code=" + URLEncoder.encode(code, StandardCharsets.UTF_8)
             + "&client_id=" + URLEncoder.encode(clientId, StandardCharsets.UTF_8)
@@ -116,64 +99,83 @@ public class GmailOAuthController {
             + "&redirect_uri=" + URLEncoder.encode(redirectUri, StandardCharsets.UTF_8)
             + "&grant_type=authorization_code";
 
-        Map<String, Object> tokenResponse = restClient.post()
-            .uri("https://oauth2.googleapis.com/token")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body(formBody)
-            .retrieve()
-            .body(Map.class);
+        Map<String, Object> tokenResponse;
+        try {
+            tokenResponse = restClient.post()
+                .uri("https://oauth2.googleapis.com/token")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .body(formBody)
+                .retrieve()
+                .body(Map.class);
+            log.info("✅ Token exchange successful");
+        } catch (Exception e) {
+            log.error("❌ Failed to exchange code for tokens", e);
+            return ResponseEntity.status(502).body(Map.of("error", "Token exchange with Google failed"));
+        }
 
-
-
-
-
-
-
-        // ✅ Step 4: Extract token values from response, with null check
         if (tokenResponse == null) {
-            return ResponseEntity.status(502).body(Map.of("error", "Failed to retrieve token from Google"));
+            log.error("❌ Token response from Google was null");
+            return ResponseEntity.status(502).body(Map.of("error", "No token response from Google"));
         }
-        String accessToken = (String) tokenResponse.get("access_token");     // Short-term token
-        String refreshToken = (String) tokenResponse.get("refresh_token");   // Long-term token
+
+        String accessToken = (String) tokenResponse.get("access_token");
+        String refreshToken = (String) tokenResponse.get("refresh_token");
         int expiresIn = tokenResponse.get("expires_in") instanceof Integer
-                ? (int) tokenResponse.get("expires_in")
-                : Integer.parseInt(tokenResponse.get("expires_in").toString()); // Handle possible type
+            ? (int) tokenResponse.get("expires_in")
+            : Integer.parseInt(tokenResponse.get("expires_in").toString());
 
-        // 📥 Step 5: Use the access token to get the user's Gmail account info (like email address)
-        Map<String, Object> userInfo = restClient.get()
-            .uri("https://www.googleapis.com/oauth2/v2/userinfo")        // Gmail userinfo endpoint
-            .header("Authorization", "Bearer " + accessToken)            // Use the token as a Bearer token
-            .retrieve()
-            .body(Map.class);
+        log.info("🔐 Access token received, expires in {} seconds", expiresIn);
 
-        // 🔍 Step 6: Extract the user's Gmail address from the response, with null check
+        // 🔍 Step 2: Get user email from Google
+        Map<String, Object> userInfo;
+        try {
+            userInfo = restClient.get()
+                .uri("https://www.googleapis.com/oauth2/v2/userinfo")
+                .header("Authorization", "Bearer " + accessToken)
+                .retrieve()
+                .body(Map.class);
+            log.info("✅ Fetched user info from Google");
+        } catch (Exception e) {
+            log.error("❌ Failed to fetch user info from Google", e);
+            return ResponseEntity.status(502).body(Map.of("error", "Failed to fetch Gmail profile"));
+        }
+
         if (userInfo == null || userInfo.get("email") == null) {
-            return ResponseEntity.status(502).body(Map.of("error", "Failed to retrieve user info from Google"));
+            log.error("❌ Missing email in user info response");
+            return ResponseEntity.status(502).body(Map.of("error", "Email not found in Google response"));
         }
+
         String email = (String) userInfo.get("email");
-        log.info("📧 Gmail account linked: {}", email);
+        log.info("📧 Gmail address: {}", email);
 
-
-        // 🧠 Extract username from JWT
-        String username = jwtUtil.getUsernameFromToken(token);
-        log.info("🔐 Authenticated user: {}", username);
-
-
-        // ✅ DB LOGIC STARTS HERE
-        Optional<User> userOpt = userRepo.findByUsername(username); // 🔒 Replace this later with real JWT-based lookup
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(401).body("User not found or not authenticated");
+        // 🧠 Step 3: Get current user from JWT
+        String username;
+        try {
+            username = jwtUtil.getUsernameFromToken(token);
+            log.info("🔐 Authenticated username from JWT: {}", username);
+        } catch (Exception e) {
+            log.error("❌ Failed to decode JWT", e);
+            return ResponseEntity.status(401).body("Invalid access token");
         }
+
+        Optional<User> userOpt = userRepo.findByUsername(username);
+        if (userOpt.isEmpty()) {
+            log.error("❌ No user found for username: {}", username);
+            return ResponseEntity.status(401).body("User not found");
+        }
+
         User user = userOpt.get();
 
+        // Step 4: Check if this Gmail is already linked
         if (emailAccountRepo.existsByEmailAddress(email)) {
+            log.warn("⚠️ Gmail address {} already linked", email);
             return ResponseEntity.status(409).body("This Gmail account is already linked.");
         }
 
-        // 📦 Save to DB
+        // Step 5: Save new EmailAccount
         EmailAccount newAccount = EmailAccount.builder()
             .user(user)
-            .displayName(email) // Later you can accept from frontend
+            .displayName(email)
             .emailAddress(email)
             .accessToken(accessToken)
             .refreshToken(refreshToken)
@@ -185,22 +187,35 @@ public class GmailOAuthController {
             .build();
 
         emailAccountRepo.save(newAccount);
-        log.info("✅ Saved Gmail account {} to DB for user {}", email, user.getUsername());
+        log.info("✅ Gmail account saved for user {}", user.getUsername());
 
-
-
-        // 🧾 Step 7: Return all key details (for now — we'll save to DB next)
+        // Step 6: Fetch and save emails
         try {
-           response.sendRedirect("http://localhost:3000/user_pages/protected/dashboard?refresh=true");
-        } catch (IOException e) {
-            log.error("Failed to redirect to dashboard", e);
-            return ResponseEntity.status(500).body("Failed to redirect to dashboard");
+            gmailService.fetchAndSaveEmails(accessToken, newAccount);
+            log.info("📥 Emails fetched and saved for {}", email);
+        } catch (Exception e) {
+            log.error("❌ Failed to fetch emails from Gmail API", e);
+            return ResponseEntity.status(500).body("Failed to fetch Gmail messages");
         }
+
+        // Step 7: Redirect to dashboard
+        try {
+            log.info("🚀 Redirecting to dashboard for inbox {}", newAccount.getId());
+            response.sendRedirect("http://localhost:3000/user_pages/protected/dashboard?inboxId=" + newAccount.getId());
+        } catch (IOException e) {
+            log.error("❌ Redirect failed", e);
+            return ResponseEntity.status(500).body("Failed to redirect");
+        }
+
         return null;
-
-
-
     }
+
+
+
+
+
+    
+
 
 
 

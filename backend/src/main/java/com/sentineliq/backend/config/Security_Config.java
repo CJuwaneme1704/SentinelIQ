@@ -1,5 +1,6 @@
 package com.sentineliq.backend.config;
 
+
 import com.sentineliq.backend.security.JwtAuthenticationFilter;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -69,4 +70,6 @@ public class Security_Config {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
+   
 }

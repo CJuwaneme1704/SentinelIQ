@@ -4,7 +4,9 @@ import com.sentineliq.backend.model.EmailAccount;
 import com.sentineliq.backend.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Repository for managing EmailAccount entities.
@@ -22,6 +24,20 @@ public interface EmailAccountRepository extends JpaRepository<EmailAccount, Long
      */
     boolean existsByEmailAddress(String emailAddress);
 
-     // ✅ Add this line:
+    /**
+     * Finds all inboxes linked to a specific user.
+     *
+     * @param user the User object
+     * @return list of inboxes owned by the user
+     */
     List<EmailAccount> findAllByUser(User user);
+
+    /**
+     * Finds a specific inbox by ID and ensures it belongs to the given user.
+     *
+     * @param id the inbox ID
+     * @param userId the ID of the authenticated user
+     * @return Optional containing the inbox if found and owned by the user
+     */
+    Optional<EmailAccount> findByIdAndUserId(Long id, Long userId);
 }
