@@ -73,19 +73,28 @@ export default function DashboardView() {
         setUsername(data.username); // Set username from API
         setInboxes(data.inboxes || []); // Set inboxes from API
 
-        const emailRes = await fetch('http://localhost:8080/api/gmail/emails?inboxId=${gmailInbox.id}',{
-          credentials: 'include',
-        })
+        // Fetch emails for the first inbox if available
+        if (data.inboxes && data.inboxes.length > 0) {
+          const firstInbox = data.inboxes[0];
+          setSelectedInbox(firstInbox);
 
-        kjojojikjjojoj
-        
+          // Fetch emails for the selected inbox using its id
+          const emailRes = await fetch(`http://localhost:8080/api/gmail/emails?inboxId=${firstInbox.id}`, {
+            credentials: 'include',
+          });
 
+          if (emailRes.ok) {
+            const emailData = await emailRes.json();
+            setEmails(emailData); // Set emails from API response
+          } else {
+            setEmails([]); // If fetch fails, set empty emails
+          }
+        } else {
+          setSelectedInbox(null);
+          setEmails([]);
+        }
 
-
-
-
-
-
+        setLoading(false); // Data is ready
       } catch (error) {
         console.error('Failed to fetch user data:', error);
         router.push('/login'); // Redirect to login on error

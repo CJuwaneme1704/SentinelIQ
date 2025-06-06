@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import EmailCard from './EmailCard';
 
 type EmailCardProps = {
+  id: number;            // Add id field for actual email ID
   sender: string;
   subject: string;
   trustScore: number;
@@ -29,10 +30,10 @@ const EmailList: React.FC<EmailListProps> = ({ emails }) => {
 
   return (
     <div className="space-y-3">
-      {emails.map((email, index) => (
+      {emails.map((email) => (
         <div
-          key={index}
-          onClick={() => router.push(`/user_pages/protected/emailviewer?emailIndex=${index}`)}
+          key={email.id}
+          onClick={() => router.push(`/user_pages/protected/emailviewer?emailId=${email.id}`)} // Use real email ID here
           className="cursor-pointer"
         >
           <EmailCard {...email} />
