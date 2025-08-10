@@ -12,7 +12,7 @@ class EmailTest { // Define the test class
         Email email = Email.builder() // Use builder pattern to create an Email
                 .subject("Test Subject") // Set subject
                 .sender("sender@example.com") // Set sender
-                .body("Test Body") // Set body
+                .plainTextBody("Test Body") // Set body
                 .receivedAt(LocalDateTime.now()) // Set received time
                 .isSpam(false) // Set spam flag
                 .trustScore(90) // Set trust score
@@ -20,7 +20,7 @@ class EmailTest { // Define the test class
 
         assertEquals("Test Subject", email.getSubject()); // Assert subject is correct
         assertEquals("sender@example.com", email.getSender()); // Assert sender is correct
-        assertEquals("Test Body", email.getBody()); // Assert body is correct
+        assertEquals("Test Body", email.getPlainTextBody()); // Assert body is correct
         assertFalse(email.getIsSpam()); // Assert spam flag is false
         assertEquals(90, email.getTrustScore()); // Assert trust score is correct
         assertNotNull(email.getReceivedAt()); // Assert received time is not null
@@ -31,7 +31,7 @@ class EmailTest { // Define the test class
         Email email = Email.builder() // Use builder pattern to create an Email
                 .subject(null) // Set subject to null
                 .sender(null) // Set sender to null
-                .body(null) // Set body to null
+                .plainTextBody(null) // Set body to null
                 .receivedAt(null) // Set received time to null
                 .isSpam(null) // Set spam flag to null
                 .trustScore(null) // Set trust score to null
@@ -39,7 +39,7 @@ class EmailTest { // Define the test class
 
         assertNull(email.getSubject()); // Assert subject is null
         assertNull(email.getSender()); // Assert sender is null
-        assertNull(email.getBody()); // Assert body is null
+        assertNull(email.getPlainTextBody()); // Assert body is null
         assertNull(email.getReceivedAt()); // Assert received time is null
         assertNull(email.getIsSpam()); // Assert spam flag is null
         assertNull(email.getTrustScore()); // Assert trust score is null
@@ -50,7 +50,7 @@ class EmailTest { // Define the test class
         Email email = Email.builder() // Use builder pattern to create an Email
                 .subject("") // Set subject to empty string
                 .sender("") // Set sender to empty string
-                .body("") // Set body to empty string
+                .plainTextBody("") // Set body to empty string
                 .receivedAt(LocalDateTime.now()) // Set received time
                 .isSpam(true) // Set spam flag to true
                 .trustScore(0) // Set trust score to 0
@@ -58,7 +58,7 @@ class EmailTest { // Define the test class
 
         assertEquals("", email.getSubject()); // Assert subject is empty string
         assertEquals("", email.getSender()); // Assert sender is empty string
-        assertEquals("", email.getBody()); // Assert body is empty string
+        assertEquals("", email.getPlainTextBody()); // Assert body is empty string
         assertTrue(email.getIsSpam()); // Assert spam flag is true
         assertEquals(0, email.getTrustScore()); // Assert trust score is 0
         assertNotNull(email.getReceivedAt()); // Assert received time is not null

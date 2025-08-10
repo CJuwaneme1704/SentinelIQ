@@ -11,7 +11,8 @@ public class EmailDto {
     private Long id;           // Add this field for unique email ID
     private String subject;
     private String sender;
-    private String body;
+    private String plainTextBody;
+    private String htmlBody;
     private LocalDateTime receivedAt;
     private Boolean isSpam;
     private Integer trustScore;

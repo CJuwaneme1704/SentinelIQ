@@ -60,14 +60,14 @@ class EmailRepositoryTest { // Define the test class
         // Create and save emails
         Email email1 = new Email(); // Create first Email
         email1.setSubject("First Email"); // Set subject
-        email1.setBody("First email body"); // Set body
+        email1.setPlainTextBody("First email body"); // Set body
         email1.setSender("sender1@example.com"); // Set sender
         email1.setReceivedAt(LocalDateTime.now().minusDays(2)); // Set received date (older)
         email1.setEmailAccount(testAccount); // Associate with test account
 
         Email email2 = new Email(); // Create second Email
         email2.setSubject("Second Email"); // Set subject
-        email2.setBody("Second email body"); // Set body
+        email2.setPlainTextBody("Second email body"); // Set body
         email2.setSender("sender2@example.com"); // Set sender
         email2.setReceivedAt(LocalDateTime.now()); // Set received date (newer)
         email2.setEmailAccount(testAccount); // Associate with test account

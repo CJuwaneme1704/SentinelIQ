@@ -12,6 +12,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.beans.factory.annotation.Value;
 import java.util.List;
 
 @Configuration
@@ -19,16 +20,21 @@ public class Security_Config {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
+
     // ✅ Constructor-based injection of the JWT filter
     public Security_Config(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
+        
         http
            .cors(cors -> cors.configurationSource(request -> {
             var config = new org.springframework.web.cors.CorsConfiguration();
-            config.setAllowedOrigins(List.of("http://localhost:3000")); // ✅ Frontend origin
+            config.setAllowedOrigins(List.of(frontendUrl)); // ✅ Frontend origin
             config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
             config.setAllowedHeaders(List.of("*"));
             config.setAllowCredentials(true); // ✅ Needed for cookies (JWT)

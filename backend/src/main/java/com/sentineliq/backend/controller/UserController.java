@@ -16,19 +16,30 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@RestController
-@RequestMapping("/api")
+/**
+ * UserController handles user-related API endpoints.
+ * 
+ * - Provides an endpoint to fetch the currently authenticated user's profile and their linked inboxes.
+ * - Uses JWT authentication via cookies.
+ */
+@RestController // Marks this class as a REST controller (returns JSON by default)
+@RequestMapping("/api") // Base path for all endpoints in this controller
 public class UserController {
 
     @Autowired
-    private JwtUtil jwtUtil;
+    private JwtUtil jwtUtil; // Utility for JWT operations
 
     @Autowired
-    private UserRepository userRepository;
+    private UserRepository userRepository; // Repository for User entities
 
     @Autowired
-    private EmailAccountRepository emailAccountRepository;
+    private EmailAccountRepository emailAccountRepository; // Repository for EmailAccount entities
 
+    /**
+     * GET /api/me
+     * Returns the current authenticated user's profile and their linked inboxes.
+     * Requires a valid JWT in the 'access_token' cookie.
+     */
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(HttpServletRequest request) {
         String token = null;
@@ -57,7 +68,7 @@ public class UserController {
 
         User user = userOpt.get();
 
-        // 📬 Fetch user's linked email accounts
+        // 📬 Fetch user's linked email accounts and map to a list of simple objects
         List<Map<String, Object>> inboxes = emailAccountRepository.findAllByUser(user)
             .stream()
             .map(inbox -> {
@@ -71,7 +82,7 @@ public class UserController {
             })
             .collect(Collectors.toList());
 
-        // ✅ Return user data + inboxes
+        // ✅ Return user data + inboxes as a JSON object
         return ResponseEntity.ok(Map.of(
             "username", user.getUsername(),
             "name", user.getName(),

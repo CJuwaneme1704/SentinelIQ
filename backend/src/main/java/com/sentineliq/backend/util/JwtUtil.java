@@ -108,10 +108,5 @@ public class JwtUtil {
         return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()));
     }
 
-    
-
-    
-
-
 
 }

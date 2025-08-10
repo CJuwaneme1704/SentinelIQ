@@ -32,14 +32,14 @@ class EmailAccountTest { // Define the test class
         Email email1 = Email.builder() // Build first Email object
                 .subject("Welcome") // Set subject
                 .sender("welcome@example.com") // Set sender
-                .body("Welcome to our service!") // Set body
+                .plainTextBody("Welcome to our service!") // Set body
                 .trustScore(80) // Set trust score
                 .build(); // Build the Email object
 
         Email email2 = Email.builder() // Build second Email object
                 .subject("Reminder") // Set subject
                 .sender("reminder@example.com") // Set sender
-                .body("Don't forget your appointment") // Set body
+                .plainTextBody("Don't forget your appointment") // Set body
                 .trustScore(60) // Set trust score
                 .build(); // Build the Email object
 
@@ -90,14 +90,14 @@ class EmailAccountTest { // Define the test class
         Email email1 = Email.builder() // Build first Email object
                 .subject("Test 1") // Set subject
                 .sender("test1@example.com") // Set sender
-                .body("Body 1") // Set body
+                .plainTextBody("Body 1") // Set body
                 .trustScore(50) // Set trust score
                 .build(); // Build the Email object
 
         Email email2 = Email.builder() // Build second Email object
                 .subject("Test 2") // Set subject
                 .sender("test2@example.com") // Set sender
-                .body("Body 2") // Set body
+                .plainTextBody("Body 2") // Set body
                 .trustScore(100) // Set trust score
                 .build(); // Build the Email object
 
@@ -121,7 +121,7 @@ class EmailAccountTest { // Define the test class
         Email email = Email.builder() // Build a single Email object
                 .subject("Duplicate Email") // Set subject
                 .sender("duplicate@example.com") // Set sender
-                .body("This is a duplicate email") // Set body
+                .plainTextBody("This is a duplicate email") // Set body
                 .trustScore(90) // Set trust score
                 .build(); // Build the Email object
 

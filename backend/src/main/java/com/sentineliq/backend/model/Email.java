@@ -5,7 +5,10 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "emails")
+@Table(
+    name = "emails",
+    uniqueConstraints = @UniqueConstraint(columnNames = {"gmailMessageId", "email_account_id"})
+)
 @Builder // ✅ Adds a builder pattern for this class
 @Data
 @NoArgsConstructor
@@ -27,7 +30,14 @@ public class Email {
     private String sender;
 
     @Column(columnDefinition = "TEXT")
-    private String body;
+    private String plainTextBody;
+
+    @Column(columnDefinition = "TEXT")
+    private String htmlBody;
+
+    @Column(nullable = false)
+    private String gmailMessageId;
+
 
     private LocalDateTime receivedAt;
 

@@ -20,4 +20,15 @@ public interface EmailRepository extends JpaRepository<Email, Long> {
      * @return a list of emails ordered by received date (most recent first)
      */
     List<Email> findByEmailAccountIdOrderByReceivedAtDesc(Long emailAccountId);
+
+
+    /**
+     * Checks if an email already exists for this account based on Gmail's unique message ID.
+     * Useful to prevent duplicate emails when syncing from Gmail.
+     *
+     * @param gmailMessageId the unique Gmail message ID
+     * @param emailAccountId the ID of the email account
+     * @return true if an email with this Gmail message ID exists for the account, false otherwise
+     */
+    boolean existsByGmailMessageIdAndEmailAccountId(String gmailMessageId, Long emailAccountId);
 }

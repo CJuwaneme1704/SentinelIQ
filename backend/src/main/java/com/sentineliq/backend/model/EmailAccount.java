@@ -38,6 +38,7 @@ public class EmailAccount {
     private String refreshToken;
 
     private LocalDateTime expiresAt;
+    
     private LocalDateTime lastSynced;
 
     @Column(length = 1000)

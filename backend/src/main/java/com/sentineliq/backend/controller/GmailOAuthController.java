@@ -40,6 +40,7 @@ public class GmailOAuthController {
     @Value("${gmail.client.id}")
     private String clientId;
 
+
     @Value("${gmail.client.secret}")
     private String clientSecret;
 
@@ -48,6 +49,10 @@ public class GmailOAuthController {
 
     @Value("${gmail.oauth.scopes}")
     private String scopes;
+
+
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
 
     private final GmailService gmailService;
 
@@ -201,7 +206,8 @@ public class GmailOAuthController {
         // Step 7: Redirect to dashboard
         try {
             log.info("🚀 Redirecting to dashboard for inbox {}", newAccount.getId());
-            response.sendRedirect("http://localhost:3000/user_pages/protected/dashboard?inboxId=" + newAccount.getId());
+            response.sendRedirect(frontendUrl + "/user_pages/protected/dashboard?inboxId=" + newAccount.getId());
+
         } catch (IOException e) {
             log.error("❌ Redirect failed", e);
             return ResponseEntity.status(500).body("Failed to redirect");
