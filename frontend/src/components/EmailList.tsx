@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import EmailCard from './EmailCard';
 
 type EmailCardProps = {
-  id: number;            // Add id field for actual email ID
+  id: number;
   sender: string;
   subject: string;
   trustScore: number;
@@ -15,30 +15,39 @@ type EmailCardProps = {
 
 type EmailListProps = {
   emails: EmailCardProps[];
+  onEmailSelect?: (email: EmailCardProps) => void;
+  onResync: () => void;
 };
 
-const EmailList: React.FC<EmailListProps> = ({ emails }) => {
+const EmailList: React.FC<EmailListProps> = ({ emails, onEmailSelect, onResync }) => {
   const router = useRouter();
-
-  if (emails.length === 0) {
-    return (
-      <div className="text-gray-500 py-8 text-center">
-        📭 No emails to display.
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-3">
-      {emails.map((email) => (
-        <div
-          key={email.id}
-          onClick={() => router.push(`/user_pages/protected/emailviewer?emailId=${email.id}`)} // Use real email ID here
-          className="cursor-pointer"
-        >
-          <EmailCard {...email} />
-        </div>
-      ))}
+      <button
+        onClick={onResync}
+        className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 mb-4"
+      >
+        🔄 Resync Inbox
+      </button>
+
+      {emails.length === 0 ? (
+        <div className="text-gray-500 py-8 text-center">📭 No emails to display.</div>
+      ) : (
+        emails.map((email) => (
+          <div
+            key={email.id}
+            onClick={() =>
+              onEmailSelect
+                ? onEmailSelect(email)
+                : router.push(`/user_pages/protected/emailviewer?emailId=${email.id}`)
+            }
+            className="cursor-pointer"
+          >
+            <EmailCard {...email} />
+          </div>
+        ))
+      )}
     </div>
   );
 };

@@ -1,5 +1,7 @@
 'use client'; // Next.js directive for client-side rendering
 
+
+//import DOMPurify from 'dompurify';
 import { useState, useEffect } from 'react'; // React hooks for state and lifecycle
 import { useRouter, useSearchParams } from 'next/navigation'; // Next.js hooks for routing and search params
 import { Inbox, ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react'; // Icon components
@@ -7,11 +9,14 @@ import EmailList from '@/components/EmailList'; // Email list component
 
 // Type for the email card props
 type EmailCardProps = {
+  id: number; // Add id field for actual email ID
   sender: string;
   subject: string;
   trustScore: number;
   intent: string;
   spam: boolean;
+  plainTextBody: string;
+  htmlBody: string;
 };
 
 // Type for an inbox object
@@ -119,13 +124,68 @@ export default function DashboardView() {
     window.location.href = 'http://localhost:8080/auth/outlook';
   };
 
-  // Handler for deleting an inbox
   const handleDeleteInbox = async (inbox: Inbox) => {
-    // Placeholder: implement real API delete if needed
-    setInboxes(inboxes.filter((i) => i.id !== inbox.id)); // Remove inbox from list
-    if (selectedInbox?.id === inbox.id) setSelectedInbox(null); // Deselect if deleted
-    setInboxToDelete(null); // Close modal
+    if (!inbox) return;
+
+    try {
+      const res = await fetch(`http://localhost:8080/api/gmail/inboxes/${inbox.id}`, {
+        method: 'DELETE',
+        credentials: 'include', // send cookies (JWT)
+      });
+
+      if (res.ok) {
+        // Remove the inbox from local state
+        setInboxes((prevInboxes) => prevInboxes.filter((i) => i.id !== inbox.id));
+
+        // Deselect if the deleted inbox was selected
+        if (selectedInbox?.id === inbox.id) {
+          setSelectedInbox(null);
+          setEmails([]); // Clear emails
+        }
+
+        setInboxToDelete(null); // Close the delete confirmation modal
+        console.log(`Inbox ${inbox.displayName} deleted successfully`);
+      } else {
+        const errorText = await res.text();
+        console.error('Failed to delete inbox:', errorText);
+        alert(`Failed to delete inbox: ${errorText}`);
+      }
+    } catch (error) {
+      console.error('Error deleting inbox:', error);
+      alert('An error occurred while deleting the inbox.');
+    }
   };
+
+
+
+
+  const handleResync = async () => {
+    if (!selectedInbox) return;
+
+    try {
+      const res = await fetch(`http://localhost:8080/api/gmail/resync?inboxId=${selectedInbox.id}`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (res.ok) {
+        // After resync, refetch emails
+        const emailRes = await fetch(`http://localhost:8080/api/gmail/emails?inboxId=${selectedInbox.id}`, {
+          credentials: 'include',
+        });
+
+        if (emailRes.ok) {
+          const emailData = await emailRes.json();
+          setEmails(emailData);
+        }
+      } else {
+        console.error("Resync failed");
+      }
+    } catch (error) {
+      console.error("Error during resync:", error);
+    }
+  };
+
 
   // Show loading spinner while fetching data
   if (loading) {
@@ -261,7 +321,12 @@ export default function DashboardView() {
       {/* Main Email Viewer */}
       <main className="flex-1 p-4">
         {selectedInbox ? (
-          <EmailList emails={emails} /> // Show emails for selected inbox
+         <EmailList 
+            emails={emails} 
+            onEmailSelect={(email) => router.push(`/user_pages/protected/emailviewer?emailId=${email.id}`)}
+            onResync={handleResync}
+          />
+
         ) : (
           <div className="text-gray-500">Please add and select an inbox to begin.</div> // Prompt if no inbox selected
         )}
