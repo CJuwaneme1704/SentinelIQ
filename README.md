@@ -39,207 +39,235 @@ SentinelIQ is a smart inbox companion that connects to your email, analyzes mess
 
 
 
-🔄 System Flow Overview — SentinelIQ
-1. 🧾 Sign Up (Frontend → Backend)
+🔄 SentinelIQ — System Flow Overview
 
+This section describes the end-to-end flow of how SentinelIQ operates — from user authentication to Gmail integration and email management.
+It connects the frontend (React/TypeScript) and backend (Spring Boot) components to show how data moves through the system.
+
+1. 🧾 User Sign-Up (Frontend → Backend)
 Frontend
 
-User fills the form in SignUp.tsx.
+User fills the registration form in SignUp.tsx.
 
-Request
+The frontend sends a POST request to:
 
 POST /api/auth/signup
 
-
 Backend
 
-Handled by AuthenticationController.registerUser
+Request handled by AuthenticationController.registerUser
 
-Password encoded using PasswordEncoder
+The backend:
 
-Tokens created via:
+Encodes the user’s password with PasswordEncoder
+
+Generates two JWTs via:
 
 JwtUtil.generateAccessToken
 
 JwtUtil.generateRefreshToken
 
-Sets cookies: access_token, refresh_token
+Sets both tokens as secure cookies: access_token, refresh_token
+
+Response includes the new user and authentication cookies.
 📄 File: AuthenticationController.java
 
-2. 🔐 Login
-
+2. 🔐 Login Flow
 Frontend
 
-User logs in via LogIn.tsx.
+User logs in through LogIn.tsx.
 
-Request
+The frontend sends:
 
 POST /api/auth/login
-
 
 Backend
 
 Handled by AuthenticationController.loginUser
 
-Verifies user credentials
+Validates user credentials
 
-Sets JWT cookies for session management
+On success:
+
+Creates JWT tokens (access + refresh)
+
+Sets authentication cookies for session tracking
 📄 File: AuthenticationController.java
 
-3. 🧠 Frontend Session Check / Global Auth State
-
+3. 🧠 Session Validation & Global Auth State
 Frontend
 
-Auth context checks session via:
+The app maintains a global authentication context defined in AuthContext.tsx.
+
+On app load or page refresh, it calls:
 
 GET /api/auth/check
 
 
-(Implemented in AuthContext.tsx)
+to validate the session using stored cookies.
 
-Auth state exposed through AuthProvider
+Auth state is:
 
-Consumed by Navbar.tsx and page components
+Managed by AuthProvider
+
+Consumed by Navbar.tsx and page-level components to show logged-in state
 📄 File: AuthContext.tsx
 
-4. 🗂️ Loading Dashboard & Inboxes
-
+4. 🗂️ Dashboard & Inbox Loading
 Frontend
 
-DashboardView.tsx calls:
+The dashboard view (DashboardView.tsx) fetches user details and inboxes using:
 
 GET /api/me
-
 
 Backend
 
 Handled by UserController.getCurrentUser
 
-Extracts JWT from access_token cookie
+Extracts user data from the access_token cookie
 
-Returns user info + inbox list
+Returns:
 
-Uses EmailAccountRepository.findAllByUser
+User profile info
+
+Connected inbox list
+
+Retrieves inboxes via EmailAccountRepository.findAllByUser
 📄 Files: UserController.java, EmailAccountRepository.java
 
-5. 📧 Linking a Gmail Inbox (OAuth Flow)
-
+5. 📧 Linking a Gmail Inbox (OAuth 2.0 Flow)
 Frontend
 
-User clicks “Link Gmail” in DashboardView.tsx
+User clicks “Link Gmail” in DashboardView.tsx.
 
 Redirects to:
 
 GET /auth/gmail
 
-
 Backend
+
 Step 1:
-GmailOAuthController.startGmailOAuth builds the Google OAuth URL
+
+GmailOAuthController.startGmailOAuth constructs the Google OAuth URL and redirects the user for consent.
 📄 File: GmailOAuthController.java
 
 Step 2:
-After user consent, Google redirects to:
+
+After consent, Google redirects to:
 
 /auth/gmail/callback
 
 
-Handled by GmailOAuthController.handleGmailCallback
+Handled by GmailOAuthController.handleGmailCallback which:
 
-Exchanges auth code for tokens
+Exchanges the OAuth code for tokens
 
-Saves an EmailAccount
+Saves an EmailAccount linked to the user
 
-Triggers initial email fetch
+Triggers an initial email sync
 📄 File: GmailOAuthController.java
 
-6. 📥 Fetching & Saving Gmail Messages
+6. 📥 Fetching & Persisting Gmail Messages
 
 Triggered by GmailService.fetchAndSaveEmails
 
-Converts Gmail messages → Email entities
+Fetches Gmail messages using the connected account tokens
 
-Persists to database
+Converts raw Gmail data into Email entities
+
+Persists them in the database for retrieval and analysis
 📄 File: GmailService.java
 
-7. 💬 Viewing Emails in the UI
-
+7. 💬 Email Retrieval (Inbox View)
 Frontend
 
-Dashboard requests:
+Dashboard requests user emails:
 
 GET /api/gmail/emails?inboxId=…
 
 
 Components:
 
-EmailList.tsx — lists emails
+EmailList.tsx → Renders email list view
 
-EmailCard.tsx — renders preview
+EmailCard.tsx → Displays email previews
 
-EmailViewer.tsx — opens full email view
+EmailViewer.tsx → Opens full email content
 
 Backend
 
-Handled by EmailController.java
+Endpoints handled by EmailController
+
+Fetches emails linked to the user’s inbox and returns JSON responses
+📄 File: EmailController.java
 
 8. 📄 Viewing a Single Email
-
 Frontend
 
-EmailViewer.tsx calls:
+EmailViewer.tsx requests a specific email:
 
 GET /api/gmail/emails/{id}
 
 
-Uses credentials: 'include' to send cookies
+Uses credentials: 'include' to send cookies for authentication.
 
 Backend
 
-Endpoint served by EmailController.java
+Served by EmailController.getEmailById
 
-9. 🔁 Manual Resync
+Returns the full email details and metadata
+📄 File: EmailController.java
 
+9. 🔁 Manual Inbox Resync
 Frontend
 
-“Resync Inbox” button in EmailList.tsx or DashboardView.tsx
-Sends:
+“Resync Inbox” button in EmailList.tsx or DashboardView.tsx triggers:
 
 POST /api/gmail/resync?inboxId=…
-
 
 Backend
 
 Handled by EmailController.resyncInbox
 
-Calls GmailService.fetchAndSaveEmails
+Calls GmailService.fetchAndSaveEmails to pull new emails from Gmail and update the database
 📄 Files: EmailController.java, GmailService.java
 
-10. 🛡️ Auth Enforcement (Backend Filter)
-
+10. 🛡️ Authentication Enforcement (JWT Filter)
 Backend
 
-Every incoming request passes through JwtAuthenticationFilter
+All requests are filtered through:
 
-Validates JWT via JwtUtil.validateToken
+JwtAuthenticationFilter
 
-Sets SecurityContext for authenticated user
+JwtUtil
+
+Responsibilities:
+
+Extract JWT from cookies
+
+Validate token integrity and expiration
+
+Set authenticated user context (SecurityContext) for downstream controllers
 📄 Files: JwtAuthenticationFilter.java, JwtUtil.java
 
-11. 🚪 Logout
-
+11. 🚪 Logout Flow
 Frontend
 
-Navbar.tsx triggers:
+Navbar.tsx triggers logout by calling:
 
 POST /api/auth/logout
-
 
 Backend
 
 Handled by AuthenticationController.logoutUser
+
+Clears cookies and invalidates tokens to end the session
 📄 Files: Navbar.tsx, AuthenticationController.java
----
+
+
+
+
+
 
 ## 🚀 Coming Soon
 
