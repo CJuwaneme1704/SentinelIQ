@@ -39,231 +39,59 @@ SentinelIQ is a smart inbox companion that connects to your email, analyzes mess
 
 
 
-🔄 SentinelIQ — System Flow Overview
-
-This section describes the end-to-end flow of how SentinelIQ operates — from user authentication to Gmail integration and email management.
-It connects the frontend (React/TypeScript) and backend (Spring Boot) components to show how data moves through the system.
-
-1. 🧾 User Sign-Up (Frontend → Backend)
-Frontend
-
-User fills the registration form in SignUp.tsx.
-
-The frontend sends a POST request to:
-
-POST /api/auth/signup
-
-Backend
-
-Request handled by AuthenticationController.registerUser
-
-The backend:
-
-Encodes the user’s password with PasswordEncoder
-
-Generates two JWTs via:
-
-JwtUtil.generateAccessToken
-
-JwtUtil.generateRefreshToken
-
-Sets both tokens as secure cookies: access_token, refresh_token
-
-Response includes the new user and authentication cookies.
-📄 File: AuthenticationController.java
-
-2. 🔐 Login Flow
-Frontend
-
-User logs in through LogIn.tsx.
-
-The frontend sends:
-
-POST /api/auth/login
-
-Backend
-
-Handled by AuthenticationController.loginUser
-
-Validates user credentials
-
-On success:
-
-Creates JWT tokens (access + refresh)
-
-Sets authentication cookies for session tracking
-📄 File: AuthenticationController.java
-
-3. 🧠 Session Validation & Global Auth State
-Frontend
-
-The app maintains a global authentication context defined in AuthContext.tsx.
-
-On app load or page refresh, it calls:
-
-GET /api/auth/check
-
-
-to validate the session using stored cookies.
-
-Auth state is:
-
-Managed by AuthProvider
-
-Consumed by Navbar.tsx and page-level components to show logged-in state
-📄 File: AuthContext.tsx
-
-4. 🗂️ Dashboard & Inbox Loading
-Frontend
-
-The dashboard view (DashboardView.tsx) fetches user details and inboxes using:
-
-GET /api/me
-
-Backend
-
-Handled by UserController.getCurrentUser
-
-Extracts user data from the access_token cookie
-
-Returns:
-
-User profile info
-
-Connected inbox list
-
-Retrieves inboxes via EmailAccountRepository.findAllByUser
-📄 Files: UserController.java, EmailAccountRepository.java
-
-5. 📧 Linking a Gmail Inbox (OAuth 2.0 Flow)
-Frontend
-
-User clicks “Link Gmail” in DashboardView.tsx.
-
-Redirects to:
-
-GET /auth/gmail
-
-Backend
-
-Step 1:
-
-GmailOAuthController.startGmailOAuth constructs the Google OAuth URL and redirects the user for consent.
-📄 File: GmailOAuthController.java
-
-Step 2:
-
-After consent, Google redirects to:
-
-/auth/gmail/callback
-
-
-Handled by GmailOAuthController.handleGmailCallback which:
-
-Exchanges the OAuth code for tokens
-
-Saves an EmailAccount linked to the user
-
-Triggers an initial email sync
-📄 File: GmailOAuthController.java
-
-6. 📥 Fetching & Persisting Gmail Messages
-
-Triggered by GmailService.fetchAndSaveEmails
-
-Fetches Gmail messages using the connected account tokens
-
-Converts raw Gmail data into Email entities
-
-Persists them in the database for retrieval and analysis
-📄 File: GmailService.java
-
-7. 💬 Email Retrieval (Inbox View)
-Frontend
-
-Dashboard requests user emails:
-
-GET /api/gmail/emails?inboxId=…
-
-
-Components:
-
-EmailList.tsx → Renders email list view
-
-EmailCard.tsx → Displays email previews
-
-EmailViewer.tsx → Opens full email content
-
-Backend
-
-Endpoints handled by EmailController
-
-Fetches emails linked to the user’s inbox and returns JSON responses
-📄 File: EmailController.java
-
-8. 📄 Viewing a Single Email
-Frontend
-
-EmailViewer.tsx requests a specific email:
-
-GET /api/gmail/emails/{id}
-
-
-Uses credentials: 'include' to send cookies for authentication.
-
-Backend
-
-Served by EmailController.getEmailById
-
-Returns the full email details and metadata
-📄 File: EmailController.java
-
-9. 🔁 Manual Inbox Resync
-Frontend
-
-“Resync Inbox” button in EmailList.tsx or DashboardView.tsx triggers:
-
-POST /api/gmail/resync?inboxId=…
-
-Backend
-
-Handled by EmailController.resyncInbox
-
-Calls GmailService.fetchAndSaveEmails to pull new emails from Gmail and update the database
-📄 Files: EmailController.java, GmailService.java
-
-10. 🛡️ Authentication Enforcement (JWT Filter)
-Backend
-
-All requests are filtered through:
-
-JwtAuthenticationFilter
-
-JwtUtil
-
-Responsibilities:
-
-Extract JWT from cookies
-
-Validate token integrity and expiration
-
-Set authenticated user context (SecurityContext) for downstream controllers
-📄 Files: JwtAuthenticationFilter.java, JwtUtil.java
-
-11. 🚪 Logout Flow
-Frontend
-
-Navbar.tsx triggers logout by calling:
-
-POST /api/auth/logout
-
-Backend
-
-Handled by AuthenticationController.logoutUser
-
-Clears cookies and invalidates tokens to end the session
-📄 Files: Navbar.tsx, AuthenticationController.java
-
+# Copilot Instructions for SentinelIQ
+
+## Project Overview
+SentinelIQ is an AI-powered email analysis and spam detection platform. It integrates Gmail (OAuth), analyzes messages in real-time, and uses AI for spam detection, sender trust scoring, and behavioral profiling. The system is composed of three main components:
+
+- **Backend** (`/backend`): Spring Boot API for Gmail integration, user/session management, and communication with the ML engine.
+- **Engine** (`/engine`): FastAPI-based Python ML service for spam detection (not present in this repo, but referenced in docs).
+- **Frontend** (`/frontend`): Next.js app for user authentication, inbox UI, and dashboard.
+
+## Key Architectural Patterns
+- **RESTful API**: All communication between frontend and backend is via REST endpoints (see `controller` classes in backend).
+- **JWT Auth**: Authentication is handled with JWT tokens, set as cookies. See `JwtAuthenticationFilter.java` and `JwtUtil.java`.
+- **Gmail OAuth**: Gmail integration uses OAuth2, managed by `GmailOAuthController.java` and `GmailService.java`.
+- **Repository Pattern**: Data access is abstracted via Spring Data JPA repositories (e.g., `UserRepository.java`, `EmailRepository.java`).
+- **Frontend Auth State**: Managed in `AuthContext.tsx` and propagated via React context.
+
+## Developer Workflows
+### Backend
+- **Build**: From `/backend`, use `./mvnw clean package` (or `mvnw.cmd` on Windows).
+- **Run**: `./mvnw spring-boot:run` (or `mvnw.cmd spring-boot:run`).
+- **Test**: `./mvnw test` (JUnit tests in `src/test/java`).
+- **Key Files**: `pom.xml`, `src/main/java/com/sentineliq/backend/controller/`, `src/main/java/com/sentineliq/backend/service/`, `src/main/java/com/sentineliq/backend/util/JwtUtil.java`
+
+### Frontend
+- **Install**: `npm install` in `/frontend`
+- **Dev Server**: `npm run dev` (Next.js, port 3000)
+- **Key Files**: `src/app/`, `src/components/`, `src/context/AuthContext.tsx`, `middleware.ts`
+
+## Project-Specific Conventions
+- **Endpoints**: All API endpoints are prefixed with `/api/` (frontend) and mapped to controllers in backend.
+- **Session**: JWT tokens are stored as cookies (`access_token`, `refresh_token`).
+- **Gmail OAuth**: Initiated via `/auth/gmail` endpoint; callback handled in `GmailOAuthController.java`.
+- **Email Sync**: Manual resync via `POST /api/gmail/resync?inboxId=...` (see `EmailController.java`).
+- **Frontend Auth**: Use `AuthContext` for all session checks and user state.
+
+## Integration Points
+- **Gmail API**: Uses `google-api-client` and `google-oauth-client-jetty` dependencies (see `pom.xml`).
+- **ML Engine**: Backend communicates with a Python FastAPI service (not included here) for spam verdicts.
+- **Database**: Uses JPA/Hibernate with (likely) PostgreSQL (see `application.properties`).
+
+## Examples
+- **User Signup**: `POST /api/auth/signup` → `AuthenticationController.registerUser`
+- **Login**: `POST /api/auth/login` → `AuthenticationController.loginUser`
+- **Fetch Emails**: `GET /api/gmail/emails?inboxId=...` → `EmailController.getEmails`
+- **Resync Inbox**: `POST /api/gmail/resync?inboxId=...` → `EmailController.resyncInbox`
+
+## References
+- See `README.md` (root) for a full system flow and file mapping.
+- See backend controller/service/repository classes for API and data logic.
+- See frontend `src/app/` and `src/context/AuthContext.tsx` for UI and auth logic.
+
+---
+If any conventions or flows are unclear, check the root `README.md` or ask for clarification.
 
 
 
