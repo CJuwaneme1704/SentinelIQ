@@ -44,6 +44,130 @@ SentinelIQ is an AI-powered email analysis and spam detection platform. It integ
 - **Fetch Emails**: `GET /api/gmail/emails?inboxId=...` → `EmailController.getEmails`
 - **Resync Inbox**: `POST /api/gmail/resync?inboxId=...` → `EmailController.resyncInbox`
 
+
+
+
+
+User Login Flow:
+┌─────────────────┐
+│ Frontend/Browser│
+└────────┬────────┘
+         │ POST /api/auth/login
+         │ (email, password)
+         ↓
+┌─────────────────────────────┐
+│ Backend                     │
+│ AuthenticationController    │
+│ - verify credentials        │
+│ - create JWT token          │
+│ - return JWT in cookie      │
+└────────┬────────────────────┘
+         │ 200 OK + Set-Cookie: access_token=eyJh...
+         ↓
+┌──────────────────────────────────┐
+│ Frontend/Browser                 │
+│ Stores JWT in cookie             │
+│ (automatic; HttpOnly recommended)│
+└──────────────────────────────────┘
+
+
+
+
+
+Gmail Link Flow (OAuth):
+┌─────────────────┐
+│ Frontend/Browser│
+└────────┬────────┘
+         │ Click "Connect Gmail"
+         ↓
+┌──────────────────────┐
+│ Browser redirected to│
+│ Google OAuth consent │
+│ (user sees Google    │
+│  login & approval)   │
+└────────┬─────────────┘
+         │ User approves
+         ↓
+┌───────────────────────────────────────┐
+│ Browser redirected back to backend:   │
+│ GET /auth/gmail/callback?code=ABC123  │
+└────────┬────────────────────────────────┘
+         │
+         ↓
+┌────────────────────────────────────────────┐
+│ Backend (GmailOAuthController)             │
+│                                            │
+│ 1) POST to Google token endpoint:          │
+│    exchange code=ABC123 for tokens         │
+│                                            │
+│ 2) Google returns:                         │
+│    {                                       │
+│      "access_token": "ya29.a0...",        │
+│      "refresh_token": "1//0gx...",        │
+│      "expires_in": 3600,                  │
+│      "scope": "gmail.readonly"            │
+│    }                                       │
+│                                            │
+│ 3) Backend saves to DB:                   │
+│    EmailAccount {                          │
+│      accessToken: "ya29.a0...",           │
+│      refreshToken: "1//0gx...",           │
+│      accessTokenExpiry: now+3600s          │
+│    }                                       │
+│                                            │
+│ 4) Backend fetches initial emails          │
+│    using the new access_token             │
+└────────┬─────────────────────────────────────┘
+         │ Redirect to dashboard
+         ↓
+┌─────────────────┐
+│ Frontend shows  │
+│ linked Gmail +  │
+│ inbox           │
+└─────────────────┘
+
+
+
+
+
+User views inbox via Frontend:
+
+[Frontend]
+  │ GET /api/gmail/emails?inboxId=2
+  │ + Cookie: access_token=JWT_TOKEN (SentinelIQ)
+  ↓
+[Backend / EmailController]
+  │ 1) JwtAuthenticationFilter intercepts request
+  │ 2) Validates JWT (signature, expiry, user ownership)
+  │ 3) ✅ JWT valid → proceed to getEmailsByInbox()
+  │
+  │ 4) Fetch EmailAccount with inboxId=2 from DB
+  │ 5) Read stored Gmail tokens:
+  │    - accessToken: "ya29.a0..."
+  │    - accessTokenExpiry: 2025-12-08 15:30:00
+  │
+  │ 6) Check: is accessToken expired?
+  │    - YES → Refresh: POST to Google with refreshToken
+  │             Google returns new accessToken (and new expiry)
+  │             Update DB with new token
+  │    - NO → Use existing accessToken
+  │
+  │ 7) Call Gmail API with accessToken:
+  │    gmail.users().messages().list("me").execute()
+  │    (Authorization header: Bearer ya29.a0...)
+  │
+  │ 8) Gmail API validates accessToken, returns emails
+  │ 9) Parse emails, return to Frontend
+  ↓
+[Frontend]
+  │ Display inbox
+
+
+
+
+
+
+
 ## References
 - See `README.md` (root) for a full system flow and file mapping.
 - See backend controller/service/repository classes for API and data logic.
