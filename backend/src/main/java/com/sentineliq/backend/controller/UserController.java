@@ -1,6 +1,6 @@
 package com.sentineliq.backend.controller;
 
-import com.sentineliq.backend.model.EmailAccount;
+//import com.sentineliq.backend.model.EmailAccount;
 import com.sentineliq.backend.model.User;
 import com.sentineliq.backend.repository.EmailAccountRepository;
 import com.sentineliq.backend.repository.UserRepository;
